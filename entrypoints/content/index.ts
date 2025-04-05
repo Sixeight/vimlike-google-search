@@ -18,7 +18,7 @@ export default {
       // Get search results from Google's main container
       return Array.from(
         document.querySelectorAll(
-          '#search .g, #search [data-hveid]:not([data-hveid=""] > div)'
+          '#rso > div:has(> *) [data-hveid][data-ved] > [data-snc], #rso > :nth-child(1):has(> *) [data-hveid][data-ved]'
         )
       ).filter((el) => {
         // Only include elements that contain links
