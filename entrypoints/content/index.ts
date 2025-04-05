@@ -16,8 +16,8 @@ export default {
     let visualModeActive = false;
     // Start index for visual mode
     let visualModeStartIndex = -1;
-    // Debug mode - set to true to see console logs
-    const DEBUG = true;
+    // Debug mode - automatically disabled in production builds
+    const DEBUG = import.meta.env.MODE !== 'production';
 
     // Helper function for logging in debug mode
     function log(...args: any[]) {
