@@ -8,6 +8,14 @@ export default {
     let searchResults: HTMLElement[] = [];
     // Style class for focused elements
     const FOCUS_STYLE = 'gsc-focused-result';
+    // Style class for marked elements
+    const MARKED_STYLE = 'gsc-marked-result';
+    // Set to store marked result indices
+    const markedResults = new Set<number>();
+    // Track if in visual mode
+    let visualModeActive = false;
+    // Start index for visual mode
+    let visualModeStartIndex = -1;
     // Debug mode - set to true to see console logs
     const DEBUG = true;
 
@@ -61,12 +69,134 @@ export default {
         const currentElement = searchResults[currentFocusIndex];
         currentElement.classList.add(FOCUS_STYLE);
 
+        // If in visual mode, mark all results between start and current
+        if (visualModeActive && visualModeStartIndex >= 0) {
+          updateVisualModeSelection();
+        }
+
         // Ensure the element is visible by scrolling to it
         currentElement.scrollIntoView({
           behavior: 'smooth',
           block: 'center',
         });
       }
+    }
+
+    // Function to toggle mark status of a result
+    function toggleMark(index: number) {
+      if (index < 0 || index >= searchResults.length) return;
+
+      const element = searchResults[index];
+
+      if (markedResults.has(index)) {
+        markedResults.delete(index);
+        element.classList.remove(MARKED_STYLE);
+      } else {
+        markedResults.add(index);
+        element.classList.add(MARKED_STYLE);
+      }
+
+      log(
+        `Result ${index} ${
+          markedResults.has(index) ? 'marked' : 'unmarked'
+        }, total marked: ${markedResults.size}`
+      );
+    }
+
+    // Function to toggle mark status of current result
+    function toggleCurrentMark() {
+      if (currentFocusIndex >= 0) {
+        toggleMark(currentFocusIndex);
+      }
+    }
+
+    // Function to update visual mode selection
+    function updateVisualModeSelection() {
+      // Clear all marks first to avoid conflicts
+      clearAllMarks();
+
+      // Determine start and end indices
+      const startIdx = Math.min(visualModeStartIndex, currentFocusIndex);
+      const endIdx = Math.max(visualModeStartIndex, currentFocusIndex);
+
+      // Mark all elements in range
+      for (let i = startIdx; i <= endIdx; i++) {
+        markedResults.add(i);
+        searchResults[i].classList.add(MARKED_STYLE);
+      }
+
+      log(
+        `Visual mode selection: ${startIdx} to ${endIdx}, total marked: ${markedResults.size}`
+      );
+    }
+
+    // Function to start visual mode
+    function startVisualMode() {
+      visualModeActive = true;
+      visualModeStartIndex = currentFocusIndex;
+      log('Visual mode started at index', visualModeStartIndex);
+
+      // Mark the current element to begin with
+      if (currentFocusIndex >= 0) {
+        markedResults.add(currentFocusIndex);
+        searchResults[currentFocusIndex].classList.add(MARKED_STYLE);
+      }
+    }
+
+    // Function to exit visual mode
+    function exitVisualMode() {
+      if (!visualModeActive) return;
+
+      visualModeActive = false;
+      visualModeStartIndex = -1;
+      log('Visual mode exited, keeping marks');
+    }
+
+    // Function to mark all results
+    function markAll() {
+      for (let i = 0; i < searchResults.length; i++) {
+        markedResults.add(i);
+        searchResults[i].classList.add(MARKED_STYLE);
+      }
+      log(`Marked all results, total: ${markedResults.size}`);
+    }
+
+    // Function to clear all marks
+    function clearAllMarks() {
+      searchResults.forEach((element, index) => {
+        if (markedResults.has(index)) {
+          element.classList.remove(MARKED_STYLE);
+        }
+      });
+      markedResults.clear();
+      log('Cleared all marks');
+    }
+
+    // Function to open all marked results in new tabs
+    function openMarkedInTabs() {
+      if (markedResults.size === 0) {
+        log('No marked results to open');
+        return;
+      }
+
+      log(`Opening ${markedResults.size} results in new tabs`);
+
+      // Convert to array and sort to open tabs in order
+      const markedIndices = Array.from(markedResults).sort((a, b) => a - b);
+
+      markedIndices.forEach((index) => {
+        if (index >= 0 && index < searchResults.length) {
+          const link = searchResults[index].querySelector(
+            'a'
+          ) as HTMLAnchorElement;
+          if (link && link.href) {
+            window.open(link.href, '_blank');
+          }
+        }
+      });
+
+      // Clear marks after opening
+      clearAllMarks();
     }
 
     // Track if 'g' key is pressed once for 'gg' shortcut
@@ -195,6 +325,52 @@ export default {
           }
           break;
 
+        case ' ': // Space to toggle mark on current result
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          toggleCurrentMark();
+          break;
+
+        case 'v': // Visual mode
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          if (visualModeActive) {
+            exitVisualMode();
+          } else {
+            startVisualMode();
+          }
+          break;
+
+        case 'Escape': // Exit visual mode
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          exitVisualMode();
+          break;
+
+        case 'A': // Mark all results
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          markAll();
+          break;
+
+        case 'D': // Clear all marks
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          clearAllMarks();
+          break;
+
+        case 'o': // Open all marked results in tabs
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
+          openMarkedInTabs();
+          break;
+
         case 'Enter': // Click on the current result
           event.preventDefault();
           gKeyPressed = false; // Reset g key state
@@ -278,6 +454,18 @@ export default {
           margin-left: -11px;
           border-radius: 4px;
           transition: background-color 0.2s ease;
+        }
+        .${MARKED_STYLE} {
+          background-color: rgba(255, 193, 7, 0.15);
+          border-left: 3px solid #ffc107;
+          padding-left: 8px;
+          margin-left: -11px;
+          border-radius: 4px;
+          transition: background-color 0.2s ease;
+        }
+        .${FOCUS_STYLE}.${MARKED_STYLE} {
+          background-color: rgba(76, 175, 80, 0.15);
+          border-left: 3px solid #4caf50;
         }
       `;
       document.head.appendChild(styleEl);
