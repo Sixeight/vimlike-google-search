@@ -5,15 +5,32 @@ A browser extension that provides Vim-like keyboard shortcuts for Google search 
 ## Features
 
 - Efficient keyboard navigation through Google search results
-- Visual focus indication for selected search results
-- Infinite scrolling (automatically loads next page results)
+- Multiple selection of search results to open in tabs
+- Visual mode for range selection (like Vim)
+- Page navigation with keyboard shortcuts
+- Visual feedback for focused and selected results
 
 ## Keyboard Shortcuts
 
+### Navigation
 - `j`: Move focus to the next search result
 - `k`: Move focus to the previous search result
-- `Enter`: Navigate to the link of the currently focused search result
-- `Command+Enter` (Mac) or `Ctrl+Enter` (Windows/Linux): Open the currently focused search result in a new tab
+- `gg`: Jump to the first search result
+- `G`: Jump to the last search result
+- `[[`: Navigate to the previous page
+- `]]`: Navigate to the next page
+
+### Selection
+- `Space`: Toggle mark on the currently focused result
+- `v`: Enter visual mode (move to select multiple results)
+- `Escape`: Exit visual mode
+- `A`: Select all results
+- `D`: Deselect all results
+
+### Actions
+- `Enter`: Navigate to the currently focused search result
+- `Command+Enter` (Mac) or `Ctrl+Enter` (Windows/Linux): Open the focused result in a new tab
+- `o`: Open all marked results in new tabs
 
 ## Usage
 

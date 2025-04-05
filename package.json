@@ -1,6 +1,6 @@
 {
-  "name": "wxt-starter",
-  "description": "manifest.json description",
+  "name": "vimlike-google-search-navigator",
+  "description": "Navigate Google search results efficiently with Vim-like keyboard shortcuts",
   "private": true,
   "version": "0.0.0",
   "type": "module",
