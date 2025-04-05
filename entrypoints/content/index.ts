@@ -69,6 +69,10 @@ export default {
       }
     }
 
+    // Track if 'g' key is pressed once for 'gg' shortcut
+    let gKeyPressed = false;
+    let gKeyTimer: number | null = null;
+
     // Keyboard event handler
     function handleKeyDown(event: KeyboardEvent) {
       // Do nothing if focus is on an input field
@@ -89,18 +93,50 @@ export default {
       switch (event.key) {
         case 'j': // Move focus to next result
           event.preventDefault();
+          gKeyPressed = false; // Reset g key state
           focusResult(currentFocusIndex + 1);
           break;
 
         case 'k': // Move focus to previous result
           event.preventDefault();
+          gKeyPressed = false; // Reset g key state
           focusResult(currentFocusIndex - 1);
           break;
 
-        case 'Enter': // Click on the current result
-          if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
-            event.preventDefault();
+        case 'g': // First part of 'gg' or second 'g' for top
+          event.preventDefault();
+          if (gKeyPressed) {
+            // Second 'g' - go to first result
+            focusResult(0);
+            gKeyPressed = false;
+            if (gKeyTimer) {
+              clearTimeout(gKeyTimer);
+              gKeyTimer = null;
+            }
+          } else {
+            // First 'g' - wait for second 'g' or timeout
+            gKeyPressed = true;
+            if (gKeyTimer) {
+              clearTimeout(gKeyTimer);
+            }
+            gKeyTimer = window.setTimeout(() => {
+              gKeyPressed = false;
+              gKeyTimer = null;
+            }, 500) as unknown as number; // Reset after 500ms
+          }
+          break;
 
+        case 'G': // Go to last result
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          focusResult(searchResults.length - 1);
+          break;
+
+        case 'Enter': // Click on the current result
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+
+          if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
             const currentElement = searchResults[currentFocusIndex];
             const link = currentElement.querySelector('a') as HTMLAnchorElement;
 
@@ -112,6 +148,15 @@ export default {
                 location.href = link.href;
               }
             }
+          }
+          break;
+
+        default:
+          // Reset g key state for any other key
+          gKeyPressed = false;
+          if (gKeyTimer) {
+            clearTimeout(gKeyTimer);
+            gKeyTimer = null;
           }
           break;
       }
