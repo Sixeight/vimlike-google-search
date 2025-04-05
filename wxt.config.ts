@@ -1,4 +1,17 @@
 import { defineConfig } from 'wxt';
 
 // See https://wxt.dev/api/config.html
-export default defineConfig({});
+export default defineConfig({
+  manifest: {
+    name: 'Vim-like Google Search Navigator',
+    description:
+      'Navigate Google search results efficiently with Vim-like keyboard shortcuts',
+    version: '1.0.0',
+    permissions: ['activeTab'],
+    icons: {
+      // 16: 'public/icon/16.png',
+      // 48: 'public/icon/48.png',
+      // 128: 'public/icon/128.png',
+    },
+  },
+});
