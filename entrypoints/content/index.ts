@@ -73,6 +73,12 @@ export default {
     let gKeyPressed = false;
     let gKeyTimer: number | null = null;
 
+    // Track for bracket navigation
+    let leftBracketPressed = false;
+    let leftBracketTimer: number | null = null;
+    let rightBracketPressed = false;
+    let rightBracketTimer: number | null = null;
+
     // Keyboard event handler
     function handleKeyDown(event: KeyboardEvent) {
       // Do nothing if focus is on an input field
@@ -94,17 +100,21 @@ export default {
         case 'j': // Move focus to next result
           event.preventDefault();
           gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
           focusResult(currentFocusIndex + 1);
           break;
 
         case 'k': // Move focus to previous result
           event.preventDefault();
           gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
           focusResult(currentFocusIndex - 1);
           break;
 
         case 'g': // First part of 'gg' or second 'g' for top
           event.preventDefault();
+          resetBracketState(); // Reset bracket states
+
           if (gKeyPressed) {
             // Second 'g' - go to first result
             focusResult(0);
@@ -129,12 +139,66 @@ export default {
         case 'G': // Go to last result
           event.preventDefault();
           gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
           focusResult(searchResults.length - 1);
+          break;
+
+        case '[': // First part of '[[' for previous page
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          rightBracketPressed = false; // Reset right bracket state
+
+          if (leftBracketPressed) {
+            // Second '[' - go to previous page
+            navigateToPreviousPage();
+            leftBracketPressed = false;
+            if (leftBracketTimer) {
+              clearTimeout(leftBracketTimer);
+              leftBracketTimer = null;
+            }
+          } else {
+            // First '[' - wait for second '[' or timeout
+            leftBracketPressed = true;
+            if (leftBracketTimer) {
+              clearTimeout(leftBracketTimer);
+            }
+            leftBracketTimer = window.setTimeout(() => {
+              leftBracketPressed = false;
+              leftBracketTimer = null;
+            }, 500) as unknown as number; // Reset after 500ms
+          }
+          break;
+
+        case ']': // First part of ']]' for next page
+          event.preventDefault();
+          gKeyPressed = false; // Reset g key state
+          leftBracketPressed = false; // Reset left bracket state
+
+          if (rightBracketPressed) {
+            // Second ']' - go to next page
+            navigateToNextPage();
+            rightBracketPressed = false;
+            if (rightBracketTimer) {
+              clearTimeout(rightBracketTimer);
+              rightBracketTimer = null;
+            }
+          } else {
+            // First ']' - wait for second ']' or timeout
+            rightBracketPressed = true;
+            if (rightBracketTimer) {
+              clearTimeout(rightBracketTimer);
+            }
+            rightBracketTimer = window.setTimeout(() => {
+              rightBracketPressed = false;
+              rightBracketTimer = null;
+            }, 500) as unknown as number; // Reset after 500ms
+          }
           break;
 
         case 'Enter': // Click on the current result
           event.preventDefault();
           gKeyPressed = false; // Reset g key state
+          resetBracketState(); // Reset bracket states
 
           if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
             const currentElement = searchResults[currentFocusIndex];
@@ -152,13 +216,54 @@ export default {
           break;
 
         default:
-          // Reset g key state for any other key
+          // Reset all states for any other key
           gKeyPressed = false;
           if (gKeyTimer) {
             clearTimeout(gKeyTimer);
             gKeyTimer = null;
           }
+          resetBracketState();
           break;
+      }
+    }
+
+    // Function to navigate to the next page
+    function navigateToNextPage() {
+      const nextPageButton = document.querySelector(
+        '#pnnext'
+      ) as HTMLAnchorElement;
+      if (nextPageButton && nextPageButton.href) {
+        log('Navigating to next page');
+        window.location.href = nextPageButton.href;
+      } else {
+        log('No next page available');
+      }
+    }
+
+    // Function to navigate to the previous page
+    function navigateToPreviousPage() {
+      const prevPageButton = document.querySelector(
+        '#pnprev'
+      ) as HTMLAnchorElement;
+      if (prevPageButton && prevPageButton.href) {
+        log('Navigating to previous page');
+        window.location.href = prevPageButton.href;
+      } else {
+        log('No previous page available');
+      }
+    }
+
+    // Function to reset bracket navigation state
+    function resetBracketState() {
+      leftBracketPressed = false;
+      if (leftBracketTimer) {
+        clearTimeout(leftBracketTimer);
+        leftBracketTimer = null;
+      }
+      rightBracketPressed = false;
+      if (rightBracketTimer) {
+        clearTimeout(rightBracketTimer);
+        rightBracketTimer = null;
       }
     }
 
