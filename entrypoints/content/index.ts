@@ -243,6 +243,88 @@ export default {
       }
     }
 
+    // Function to copy URLs in Markdown format to clipboard
+    function copyUrlsAsMarkdown() {
+      if (markedResults.size === 0) {
+        // No marked results, copy the current focused result
+        if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
+          const element = searchResults[currentFocusIndex];
+          const link = element.querySelector('a') as HTMLAnchorElement;
+          if (link && link.href) {
+            // Get the title text
+            const titleText = link.textContent?.trim() || 'Link';
+
+            // Create markdown format
+            const markdown = `[${titleText}](${link.href})`;
+
+            navigator.clipboard
+              .writeText(markdown)
+              .then(() => {
+                log('Copied URL as Markdown to clipboard:', markdown);
+
+                // Visual feedback (flash highlight)
+                element.classList.add('gsc-copy-feedback');
+
+                setTimeout(() => {
+                  element.classList.remove('gsc-copy-feedback');
+                }, 500);
+
+                // Show toast notification
+                showToastNotification('Markdown link copied to clipboard');
+              })
+              .catch((err) => {
+                log('Error copying URL as Markdown to clipboard:', err);
+              });
+          }
+        }
+      } else {
+        // Multiple marked results, copy all URLs as markdown list
+        const markedIndices = Array.from(markedResults).sort((a, b) => a - b);
+        const markdownLinks = markedIndices
+          .map((index) => {
+            if (index >= 0 && index < searchResults.length) {
+              const element = searchResults[index];
+              const link = element.querySelector('a') as HTMLAnchorElement;
+              if (link && link.href) {
+                const titleText = link.textContent?.trim() || 'Link';
+                return `- [${titleText}](${link.href})`;
+              }
+            }
+            return null;
+          })
+          .filter((md) => md !== null) as string[];
+
+        if (markdownLinks.length > 0) {
+          navigator.clipboard
+            .writeText(markdownLinks.join('\n'))
+            .then(() => {
+              log(
+                'Copied multiple URLs as Markdown to clipboard:',
+                markdownLinks.length
+              );
+
+              // Visual feedback for all copied elements
+              markedIndices.forEach((index) => {
+                const element = searchResults[index];
+                element.classList.add('gsc-copy-feedback');
+
+                setTimeout(() => {
+                  element.classList.remove('gsc-copy-feedback');
+                }, 500);
+              });
+
+              // Show toast notification
+              showToastNotification(
+                `${markdownLinks.length} Markdown links copied to clipboard`
+              );
+            })
+            .catch((err) => {
+              log('Error copying URLs as Markdown to clipboard:', err);
+            });
+        }
+      }
+    }
+
     // Function to show a simple toast notification
     function showToastNotification(message: string) {
       // Create toast element
@@ -440,6 +522,12 @@ export default {
           event.preventDefault();
           resetAllKeySequences();
           copyUrlsToClipboard();
+          break;
+
+        case 'C': // Copy URL(s) to clipboard as Markdown format
+          event.preventDefault();
+          resetAllKeySequences();
+          copyUrlsAsMarkdown();
           break;
 
         case 'Escape': // Exit visual mode
