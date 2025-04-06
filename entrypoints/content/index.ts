@@ -19,6 +19,29 @@ export default {
     // Debug mode - automatically disabled in production builds
     const DEBUG = import.meta.env.MODE !== 'production';
 
+    // Define key constants
+    const KEYS = {
+      MOVE_DOWN: 'j',
+      MOVE_UP: 'k',
+      GO_TOP_PART: 'g',
+      GO_BOTTOM: 'G',
+      PREV_PAGE_PART: '[',
+      NEXT_PAGE_PART: ']',
+      TOGGLE_MARK: ' ',
+      VISUAL_MODE: 'v',
+      COPY_URL: 'c',
+      COPY_MARKDOWN: 'C',
+      ESCAPE: 'Escape',
+      MARK_ALL: 'A',
+      CLEAR_MARKS: 'D',
+      OPEN_TABS: 'o',
+      ENTER: 'Enter',
+    } as const;
+
+    // Create keybinding to function mapping
+    type KeyAction = () => void;
+    const keyActionMap = new Map<string, KeyAction>();
+
     // Helper function for logging in debug mode
     function log(...args: any[]) {
       if (DEBUG) {
@@ -444,16 +467,61 @@ export default {
       Object.keys(keySequences).forEach((key) => resetKeySequence(key));
     }
 
-    // Keyboard event handler
+    // Setup key action mappings
+    function setupKeyBindings() {
+      // Regular actions
+      keyActionMap.set(KEYS.MOVE_DOWN, () =>
+        focusResult(currentFocusIndex + 1)
+      );
+      keyActionMap.set(KEYS.MOVE_UP, () => focusResult(currentFocusIndex - 1));
+      keyActionMap.set(KEYS.GO_BOTTOM, () =>
+        focusResult(searchResults.length - 1)
+      );
+      keyActionMap.set(KEYS.TOGGLE_MARK, toggleCurrentMark);
+      keyActionMap.set(KEYS.VISUAL_MODE, () => {
+        if (visualModeActive) {
+          exitVisualMode();
+        } else {
+          startVisualMode();
+        }
+      });
+      keyActionMap.set(KEYS.COPY_URL, copyUrlsToClipboard);
+      keyActionMap.set(KEYS.COPY_MARKDOWN, copyUrlsAsMarkdown);
+      keyActionMap.set(KEYS.ESCAPE, exitVisualMode);
+      keyActionMap.set(KEYS.MARK_ALL, markAll);
+      keyActionMap.set(KEYS.CLEAR_MARKS, clearAllMarks);
+      keyActionMap.set(KEYS.OPEN_TABS, openMarkedInTabs);
+    }
+
+    // Handle Enter key specially since it needs the event object
+    function handleEnterKey(event: KeyboardEvent) {
+      if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
+        const currentElement = searchResults[currentFocusIndex];
+        const link = currentElement.querySelector('a') as HTMLAnchorElement;
+
+        if (link) {
+          // Open in new tab if Command/Ctrl key is pressed
+          if (event.metaKey || event.ctrlKey) {
+            openLinkInNewTab(link);
+          } else {
+            location.href = link.href;
+          }
+        }
+      }
+    }
+
+    // Keyboard event handler with improved event handling
     function handleKeyDown(event: KeyboardEvent) {
-      // Do nothing if focus is on an input field
+      // Do nothing if focus is on an input field or a form control
       const activeElement = document.activeElement;
       if (
         activeElement &&
         (activeElement.tagName === 'INPUT' ||
           activeElement.tagName === 'TEXTAREA' ||
           // @ts-ignore: isContentEditable is available in modern browsers
-          activeElement.isContentEditable)
+          activeElement.isContentEditable ||
+          activeElement.tagName === 'SELECT' ||
+          activeElement.hasAttribute('contenteditable'))
       ) {
         return;
       }
@@ -461,152 +529,55 @@ export default {
       // Update search results list
       searchResults = getSearchResults();
 
-      // List of specific keys handled by the extension
-      const navigationKeys = [
-        'j',
-        'k',
-        'g',
-        'G',
-        '[',
-        ']',
-        ' ',
-        'v',
-        'c',
-        'C',
-        'A',
-        'D',
-        'o',
-        'Enter',
-        'Escape',
-      ];
-
       // Skip extension handling when modifier keys are pressed (prioritize browser default behavior)
-      if ((event.ctrlKey || event.metaKey) && event.key !== 'Enter') {
+      // Exception: Ctrl/Cmd+Enter is handled by the extension
+      if ((event.ctrlKey || event.metaKey) && event.key !== KEYS.ENTER) {
         return;
       }
 
-      // Let browser handle keys not registered for the extension
-      if (!navigationKeys.includes(event.key)) {
+      // Handle sequential key inputs for g, [, and ]
+      if (event.key === KEYS.GO_TOP_PART) {
+        event.preventDefault();
+        if (handleKeySequence(KEYS.GO_TOP_PART, () => focusResult(0))) {
+          // Second 'g' - already processed
+          return;
+        }
+        return;
+      } else if (event.key === KEYS.PREV_PAGE_PART) {
+        event.preventDefault();
+        if (handleKeySequence(KEYS.PREV_PAGE_PART, navigateToPreviousPage)) {
+          // Second '[' - already processed
+          return;
+        }
+        return;
+      } else if (event.key === KEYS.NEXT_PAGE_PART) {
+        event.preventDefault();
+        if (handleKeySequence(KEYS.NEXT_PAGE_PART, navigateToNextPage)) {
+          // Second ']' - already processed
+          return;
+        }
+        return;
+      }
+
+      // Handle regular key actions from the map
+      const action = keyActionMap.get(event.key);
+      if (action) {
+        event.preventDefault();
+        resetAllKeySequences(); // Reset any ongoing sequences
+        action();
+        return;
+      }
+
+      // Handle Enter key specially
+      if (event.key === KEYS.ENTER) {
+        event.preventDefault();
         resetAllKeySequences();
+        handleEnterKey(event);
         return;
       }
 
-      switch (event.key) {
-        case 'j': // Move focus to next result
-          event.preventDefault();
-          resetAllKeySequences();
-          focusResult(currentFocusIndex + 1);
-          break;
-
-        case 'k': // Move focus to previous result
-          event.preventDefault();
-          resetAllKeySequences();
-          focusResult(currentFocusIndex - 1);
-          break;
-
-        case 'g': // First part of 'gg' or second 'g' for top
-          event.preventDefault();
-          if (handleKeySequence('g', () => focusResult(0))) {
-            // Second 'g' - already processed
-          }
-          break;
-
-        case 'G': // Go to last result
-          event.preventDefault();
-          resetAllKeySequences();
-          focusResult(searchResults.length - 1);
-          break;
-
-        case '[': // First part of '[[' for previous page
-          event.preventDefault();
-          if (handleKeySequence('[', navigateToPreviousPage)) {
-            // Second '[' - already processed
-          }
-          break;
-
-        case ']': // First part of ']]' for next page
-          event.preventDefault();
-          if (handleKeySequence(']', navigateToNextPage)) {
-            // Second ']' - already processed
-          }
-          break;
-
-        case ' ': // Space to toggle mark on current result
-          event.preventDefault();
-          resetAllKeySequences();
-          toggleCurrentMark();
-          break;
-
-        case 'v': // Visual mode
-          event.preventDefault();
-          resetAllKeySequences();
-          if (visualModeActive) {
-            exitVisualMode();
-          } else {
-            startVisualMode();
-          }
-          break;
-
-        case 'c': // Copy URL(s) to clipboard
-          event.preventDefault();
-          resetAllKeySequences();
-          copyUrlsToClipboard();
-          break;
-
-        case 'C': // Copy URL(s) to clipboard as Markdown format
-          event.preventDefault();
-          resetAllKeySequences();
-          copyUrlsAsMarkdown();
-          break;
-
-        case 'Escape': // Exit visual mode
-          event.preventDefault();
-          resetAllKeySequences();
-          exitVisualMode();
-          break;
-
-        case 'A': // Mark all results
-          event.preventDefault();
-          resetAllKeySequences();
-          markAll();
-          break;
-
-        case 'D': // Clear all marks
-          event.preventDefault();
-          resetAllKeySequences();
-          clearAllMarks();
-          break;
-
-        case 'o': // Open all marked results in tabs
-          event.preventDefault();
-          resetAllKeySequences();
-          openMarkedInTabs();
-          break;
-
-        case 'Enter': // Click on the current result
-          event.preventDefault();
-          resetAllKeySequences();
-
-          if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
-            const currentElement = searchResults[currentFocusIndex];
-            const link = currentElement.querySelector('a') as HTMLAnchorElement;
-
-            if (link) {
-              // Open in new tab if Command/Ctrl key is pressed
-              if (event.metaKey || event.ctrlKey) {
-                openLinkInNewTab(link);
-              } else {
-                location.href = link.href;
-              }
-            }
-          }
-          break;
-
-        default:
-          // Reset all states for any other key
-          resetAllKeySequences();
-          break;
-      }
+      // If key is not handled by the extension, reset sequences and let browser handle it
+      resetAllKeySequences();
     }
 
     // Function to navigate to the next page
@@ -692,6 +663,9 @@ export default {
 
       // Add custom styles
       addStyles();
+
+      // Setup key bindings
+      setupKeyBindings();
 
       // Set up event listeners
       document.addEventListener('keydown', handleKeyDown);
