@@ -9,6 +9,7 @@ A browser extension that provides Vim-like keyboard shortcuts for Google search 
 - Visual mode for range selection (like Vim)
 - Page navigation with keyboard shortcuts
 - Visual feedback for focused and selected results
+- Copy URLs to clipboard in plain text or Markdown format
 
 ## Keyboard Shortcuts
 
@@ -31,6 +32,8 @@ A browser extension that provides Vim-like keyboard shortcuts for Google search 
 - `Enter`: Navigate to the currently focused search result
 - `Command+Enter` (Mac) or `Ctrl+Enter` (Windows/Linux): Open the focused result in a new tab
 - `o`: Open all marked results in new tabs
+- `c`: Copy URLs of selected results to clipboard (or current focused result if none selected)
+- `C`: Copy URLs in Markdown format to clipboard
 
 ## Usage
 
