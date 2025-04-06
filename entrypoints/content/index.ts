@@ -325,10 +325,42 @@ export default {
       }, 2000);
     }
 
+    // Helper function to check if running on macOS
+    function isMacOS(): boolean {
+      return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    }
+
+    // 指定されたリンクを新しいタブで開く関数
+    function openLinkInNewTab(link: HTMLAnchorElement) {
+      if (!link || !link.href) return;
+
+      const newTabEvent = new MouseEvent('click', {
+        bubbles: true,
+        cancelable: true,
+        view: window,
+        ctrlKey: !isMacOS(),
+        metaKey: isMacOS(),
+      });
+      link.dispatchEvent(newTabEvent);
+    }
+
     // Function to open all marked results in new tabs
     function openMarkedInTabs() {
       if (markedResults.size === 0) {
         log('No marked results to open');
+
+        // 選択されたアイテムがない場合、現在フォーカスされている結果を開く
+        if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
+          const link = searchResults[currentFocusIndex].querySelector(
+            'a'
+          ) as HTMLAnchorElement;
+
+          if (link) {
+            log('Opening current focused result in new tab');
+            openLinkInNewTab(link);
+          }
+        }
+
         return;
       }
 
@@ -342,17 +374,9 @@ export default {
           const link = searchResults[index].querySelector(
             'a'
           ) as HTMLAnchorElement;
-          if (link && link.href) {
+          if (link) {
             // Arcブラウザでは window.open が複数タブを開かない問題に対応
-            // a要素の click() メソッドを使う（Ctrl/Cmdキーを押した状態でのクリックをシミュレート）
-            const newTabEvent = new MouseEvent('click', {
-              bubbles: true,
-              cancelable: true,
-              view: window,
-              ctrlKey: !isMacOS(),
-              metaKey: isMacOS(),
-            });
-            link.dispatchEvent(newTabEvent);
+            openLinkInNewTab(link);
           }
         }
       });
@@ -366,11 +390,6 @@ export default {
       active: boolean;
       timer: number | null;
     };
-
-    // Helper function to check if running on macOS
-    function isMacOS(): boolean {
-      return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
-    }
 
     // Store key sequence states
     const keySequences: Record<string, SequenceState> = {
@@ -575,14 +594,7 @@ export default {
             if (link) {
               // Open in new tab if Command/Ctrl key is pressed
               if (event.metaKey || event.ctrlKey) {
-                const newTabEvent = new MouseEvent('click', {
-                  bubbles: true,
-                  cancelable: true,
-                  view: window,
-                  ctrlKey: !isMacOS(),
-                  metaKey: isMacOS(),
-                });
-                link.dispatchEvent(newTabEvent);
+                openLinkInNewTab(link);
               } else {
                 location.href = link.href;
               }
