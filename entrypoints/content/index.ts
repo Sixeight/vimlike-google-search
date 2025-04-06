@@ -172,6 +172,102 @@ export default {
       log('Cleared all marks');
     }
 
+    // Function to copy URLs to clipboard
+    function copyUrlsToClipboard() {
+      if (markedResults.size === 0) {
+        // No marked results, copy the current focused result
+        if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
+          const link = searchResults[currentFocusIndex].querySelector(
+            'a'
+          ) as HTMLAnchorElement;
+          if (link && link.href) {
+            navigator.clipboard
+              .writeText(link.href)
+              .then(() => {
+                log('Copied URL to clipboard:', link.href);
+
+                // Visual feedback (flash highlight)
+                const currentElement = searchResults[currentFocusIndex];
+                currentElement.classList.add('gsc-copy-feedback');
+
+                setTimeout(() => {
+                  currentElement.classList.remove('gsc-copy-feedback');
+                }, 500);
+
+                // Show toast notification
+                showToastNotification('URL copied to clipboard');
+              })
+              .catch((err) => {
+                log('Error copying URL to clipboard:', err);
+              });
+          }
+        }
+      } else {
+        // Multiple marked results, copy all URLs
+        const markedIndices = Array.from(markedResults).sort((a, b) => a - b);
+        const urls = markedIndices
+          .map((index) => {
+            if (index >= 0 && index < searchResults.length) {
+              const link = searchResults[index].querySelector(
+                'a'
+              ) as HTMLAnchorElement;
+              return link && link.href ? link.href : null;
+            }
+            return null;
+          })
+          .filter((url) => url !== null) as string[];
+
+        if (urls.length > 0) {
+          navigator.clipboard
+            .writeText(urls.join('\n'))
+            .then(() => {
+              log('Copied multiple URLs to clipboard:', urls.length);
+
+              // Visual feedback for all copied elements
+              markedIndices.forEach((index) => {
+                const element = searchResults[index];
+                element.classList.add('gsc-copy-feedback');
+
+                setTimeout(() => {
+                  element.classList.remove('gsc-copy-feedback');
+                }, 500);
+              });
+
+              // Show toast notification
+              showToastNotification(`${urls.length} URLs copied to clipboard`);
+            })
+            .catch((err) => {
+              log('Error copying URLs to clipboard:', err);
+            });
+        }
+      }
+    }
+
+    // Function to show a simple toast notification
+    function showToastNotification(message: string) {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = 'gsc-toast-notification';
+      toast.textContent = message;
+
+      // Append to body
+      document.body.appendChild(toast);
+
+      // Force layout reflow
+      void toast.offsetWidth;
+
+      // Add visible class to start animation
+      toast.classList.add('visible');
+
+      // Remove after animation
+      setTimeout(() => {
+        toast.classList.remove('visible');
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300); // Allow time for fade out animation
+      }, 2000);
+    }
+
     // Function to open all marked results in new tabs
     function openMarkedInTabs() {
       if (markedResults.size === 0) {
@@ -340,6 +436,12 @@ export default {
           }
           break;
 
+        case 'c': // Copy URL(s) to clipboard
+          event.preventDefault();
+          resetAllKeySequences();
+          copyUrlsToClipboard();
+          break;
+
         case 'Escape': // Exit visual mode
           event.preventDefault();
           resetAllKeySequences();
@@ -446,6 +548,29 @@ export default {
         .${FOCUS_STYLE}.${MARKED_STYLE} {
           background-color: rgba(76, 175, 80, 0.15);
           border-left: 3px solid #4caf50;
+        }
+        .gsc-copy-feedback {
+          background-color: rgba(3, 169, 244, 0.2) !important;
+          border-left-color: #03a9f4 !important;
+          transition: all 0.2s ease !important;
+        }
+        .gsc-toast-notification {
+          position: fixed;
+          bottom: 20px;
+          left: 50%;
+          transform: translateX(-50%) translateY(100px);
+          background-color: rgba(0, 0, 0, 0.8);
+          color: white;
+          padding: 10px 20px;
+          border-radius: 4px;
+          font-size: 14px;
+          z-index: 10000;
+          opacity: 0;
+          transition: transform 0.3s ease, opacity 0.3s ease;
+        }
+        .gsc-toast-notification.visible {
+          transform: translateX(-50%) translateY(0);
+          opacity: 1;
         }
       `;
       document.head.appendChild(styleEl);
