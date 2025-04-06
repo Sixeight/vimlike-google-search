@@ -172,73 +172,79 @@ export default {
       log('Cleared all marks');
     }
 
+    // Helper function to provide visual feedback for copied elements
+    function showCopyFeedback(elements: HTMLElement[]) {
+      elements.forEach((element) => {
+        element.classList.add('gsc-copy-feedback');
+
+        setTimeout(() => {
+          element.classList.remove('gsc-copy-feedback');
+        }, 500);
+      });
+    }
+
+    // Helper function to copy content to clipboard and show feedback
+    function copyToClipboard(
+      content: string,
+      elements: HTMLElement[],
+      message: string
+    ) {
+      navigator.clipboard
+        .writeText(content)
+        .then(() => {
+          log('Copied to clipboard:', content);
+
+          // Visual feedback
+          showCopyFeedback(elements);
+
+          // Show toast notification
+          showToastNotification(message);
+        })
+        .catch((err) => {
+          log('Error copying to clipboard:', err);
+        });
+    }
+
     // Function to copy URLs to clipboard
     function copyUrlsToClipboard() {
       if (markedResults.size === 0) {
         // No marked results, copy the current focused result
         if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
-          const link = searchResults[currentFocusIndex].querySelector(
-            'a'
-          ) as HTMLAnchorElement;
+          const currentElement = searchResults[currentFocusIndex];
+          const link = currentElement.querySelector('a') as HTMLAnchorElement;
+
           if (link && link.href) {
-            navigator.clipboard
-              .writeText(link.href)
-              .then(() => {
-                log('Copied URL to clipboard:', link.href);
-
-                // Visual feedback (flash highlight)
-                const currentElement = searchResults[currentFocusIndex];
-                currentElement.classList.add('gsc-copy-feedback');
-
-                setTimeout(() => {
-                  currentElement.classList.remove('gsc-copy-feedback');
-                }, 500);
-
-                // Show toast notification
-                showToastNotification('URL copied to clipboard');
-              })
-              .catch((err) => {
-                log('Error copying URL to clipboard:', err);
-              });
+            copyToClipboard(
+              link.href,
+              [currentElement],
+              'URL copied to clipboard'
+            );
           }
         }
       } else {
         // Multiple marked results, copy all URLs
         const markedIndices = Array.from(markedResults).sort((a, b) => a - b);
-        const urls = markedIndices
-          .map((index) => {
-            if (index >= 0 && index < searchResults.length) {
-              const link = searchResults[index].querySelector(
-                'a'
-              ) as HTMLAnchorElement;
-              return link && link.href ? link.href : null;
+        const urls: string[] = [];
+        const elements: HTMLElement[] = [];
+
+        markedIndices.forEach((index) => {
+          if (index >= 0 && index < searchResults.length) {
+            const element = searchResults[index];
+            const link = element.querySelector('a') as HTMLAnchorElement;
+
+            if (link && link.href) {
+              urls.push(link.href);
+              elements.push(element);
             }
-            return null;
-          })
-          .filter((url) => url !== null) as string[];
+          }
+        });
 
         if (urls.length > 0) {
-          navigator.clipboard
-            .writeText(urls.join('\n'))
-            .then(() => {
-              log('Copied multiple URLs to clipboard:', urls.length);
-
-              // Visual feedback for all copied elements
-              markedIndices.forEach((index) => {
-                const element = searchResults[index];
-                element.classList.add('gsc-copy-feedback');
-
-                setTimeout(() => {
-                  element.classList.remove('gsc-copy-feedback');
-                }, 500);
-              });
-
-              // Show toast notification
-              showToastNotification(`${urls.length} URLs copied to clipboard`);
-            })
-            .catch((err) => {
-              log('Error copying URLs to clipboard:', err);
-            });
+          copyToClipboard(
+            urls.join('\n'),
+            elements,
+            `${urls.length} URLs copied to clipboard`
+          );
         }
       }
     }
@@ -250,6 +256,7 @@ export default {
         if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
           const element = searchResults[currentFocusIndex];
           const link = element.querySelector('a') as HTMLAnchorElement;
+
           if (link && link.href) {
             // Get the title text
             const titleText = link.textContent?.trim() || 'Link';
@@ -257,70 +264,38 @@ export default {
             // Create markdown format
             const markdown = `[${titleText}](${link.href})`;
 
-            navigator.clipboard
-              .writeText(markdown)
-              .then(() => {
-                log('Copied URL as Markdown to clipboard:', markdown);
-
-                // Visual feedback (flash highlight)
-                element.classList.add('gsc-copy-feedback');
-
-                setTimeout(() => {
-                  element.classList.remove('gsc-copy-feedback');
-                }, 500);
-
-                // Show toast notification
-                showToastNotification('Markdown link copied to clipboard');
-              })
-              .catch((err) => {
-                log('Error copying URL as Markdown to clipboard:', err);
-              });
+            copyToClipboard(
+              markdown,
+              [element],
+              'Markdown link copied to clipboard'
+            );
           }
         }
       } else {
         // Multiple marked results, copy all URLs as markdown list
         const markedIndices = Array.from(markedResults).sort((a, b) => a - b);
-        const markdownLinks = markedIndices
-          .map((index) => {
-            if (index >= 0 && index < searchResults.length) {
-              const element = searchResults[index];
-              const link = element.querySelector('a') as HTMLAnchorElement;
-              if (link && link.href) {
-                const titleText = link.textContent?.trim() || 'Link';
-                return `- [${titleText}](${link.href})`;
-              }
+        const markdownLinks: string[] = [];
+        const elements: HTMLElement[] = [];
+
+        markedIndices.forEach((index) => {
+          if (index >= 0 && index < searchResults.length) {
+            const element = searchResults[index];
+            const link = element.querySelector('a') as HTMLAnchorElement;
+
+            if (link && link.href) {
+              const titleText = link.textContent?.trim() || 'Link';
+              markdownLinks.push(`- [${titleText}](${link.href})`);
+              elements.push(element);
             }
-            return null;
-          })
-          .filter((md) => md !== null) as string[];
+          }
+        });
 
         if (markdownLinks.length > 0) {
-          navigator.clipboard
-            .writeText(markdownLinks.join('\n'))
-            .then(() => {
-              log(
-                'Copied multiple URLs as Markdown to clipboard:',
-                markdownLinks.length
-              );
-
-              // Visual feedback for all copied elements
-              markedIndices.forEach((index) => {
-                const element = searchResults[index];
-                element.classList.add('gsc-copy-feedback');
-
-                setTimeout(() => {
-                  element.classList.remove('gsc-copy-feedback');
-                }, 500);
-              });
-
-              // Show toast notification
-              showToastNotification(
-                `${markdownLinks.length} Markdown links copied to clipboard`
-              );
-            })
-            .catch((err) => {
-              log('Error copying URLs as Markdown to clipboard:', err);
-            });
+          copyToClipboard(
+            markdownLinks.join('\n'),
+            elements,
+            `${markdownLinks.length} Markdown links copied to clipboard`
+          );
         }
       }
     }
