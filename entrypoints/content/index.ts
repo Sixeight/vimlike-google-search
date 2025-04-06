@@ -330,7 +330,7 @@ export default {
       return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
     }
 
-    // 指定されたリンクを新しいタブで開く関数
+    // Function to open a link in a new tab
     function openLinkInNewTab(link: HTMLAnchorElement) {
       if (!link || !link.href) return;
 
@@ -349,7 +349,7 @@ export default {
       if (markedResults.size === 0) {
         log('No marked results to open');
 
-        // 選択されたアイテムがない場合、現在フォーカスされている結果を開く
+        // If no items are selected, open the currently focused result
         if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
           const link = searchResults[currentFocusIndex].querySelector(
             'a'
@@ -375,7 +375,7 @@ export default {
             'a'
           ) as HTMLAnchorElement;
           if (link) {
-            // Arcブラウザでは window.open が複数タブを開かない問題に対応
+            // Addressing an issue in Arc browser where window.open doesn't open multiple tabs
             openLinkInNewTab(link);
           }
         }
@@ -461,7 +461,7 @@ export default {
       // Update search results list
       searchResults = getSearchResults();
 
-      // 拡張機能で処理する特定のキーリスト
+      // List of specific keys handled by the extension
       const navigationKeys = [
         'j',
         'k',
@@ -480,12 +480,12 @@ export default {
         'Escape',
       ];
 
-      // 修飾キーと組み合わせた場合は、拡張の処理を行わない（ブラウザのデフォルト処理を優先）
+      // Skip extension handling when modifier keys are pressed (prioritize browser default behavior)
       if ((event.ctrlKey || event.metaKey) && event.key !== 'Enter') {
         return;
       }
 
-      // 拡張機能のキーでない場合はブラウザのデフォルト処理に任せる
+      // Let browser handle keys not registered for the extension
       if (!navigationKeys.includes(event.key)) {
         resetAllKeySequences();
         return;
