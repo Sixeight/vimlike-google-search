@@ -190,7 +190,16 @@ export default {
             'a'
           ) as HTMLAnchorElement;
           if (link && link.href) {
-            window.open(link.href, '_blank');
+            // Arcブラウザでは window.open が複数タブを開かない問題に対応
+            // a要素の click() メソッドを使う（Ctrl/Cmdキーを押した状態でのクリックをシミュレート）
+            const newTabEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window,
+              ctrlKey: navigator.platform.indexOf('Mac') === -1,
+              metaKey: navigator.platform.indexOf('Mac') !== -1,
+            });
+            link.dispatchEvent(newTabEvent);
           }
         }
       });
@@ -366,7 +375,14 @@ export default {
             if (link) {
               // Open in new tab if Command/Ctrl key is pressed
               if (event.metaKey || event.ctrlKey) {
-                window.open(link.href, '_blank');
+                const newTabEvent = new MouseEvent('click', {
+                  bubbles: true,
+                  cancelable: true,
+                  view: window,
+                  ctrlKey: navigator.platform.indexOf('Mac') === -1,
+                  metaKey: navigator.platform.indexOf('Mac') !== -1,
+                });
+                link.dispatchEvent(newTabEvent);
               } else {
                 location.href = link.href;
               }
