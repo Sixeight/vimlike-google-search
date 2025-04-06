@@ -199,15 +199,64 @@ export default {
       clearAllMarks();
     }
 
-    // Track if 'g' key is pressed once for 'gg' shortcut
-    let gKeyPressed = false;
-    let gKeyTimer: number | null = null;
+    // State management for sequential key inputs
+    type SequenceState = {
+      active: boolean;
+      timer: number | null;
+    };
 
-    // Track for bracket navigation
-    let leftBracketPressed = false;
-    let leftBracketTimer: number | null = null;
-    let rightBracketPressed = false;
-    let rightBracketTimer: number | null = null;
+    // Store key sequence states
+    const keySequences: Record<string, SequenceState> = {
+      g: { active: false, timer: null },
+      '[': { active: false, timer: null },
+      ']': { active: false, timer: null },
+    };
+
+    // Function to handle sequential key inputs
+    function handleKeySequence(key: string, callback: () => void): boolean {
+      const state = keySequences[key];
+
+      if (!state) return false;
+
+      // Reset other sequences
+      Object.keys(keySequences).forEach((k) => {
+        if (k !== key) resetKeySequence(k);
+      });
+
+      if (state.active) {
+        // Second key press
+        callback();
+        resetKeySequence(key);
+        return true;
+      } else {
+        // First key press
+        state.active = true;
+        if (state.timer) {
+          clearTimeout(state.timer);
+        }
+        state.timer = window.setTimeout(() => {
+          resetKeySequence(key);
+        }, 500) as unknown as number;
+        return false;
+      }
+    }
+
+    // Function to reset key sequence state
+    function resetKeySequence(key: string) {
+      const state = keySequences[key];
+      if (!state) return;
+
+      state.active = false;
+      if (state.timer) {
+        clearTimeout(state.timer);
+        state.timer = null;
+      }
+    }
+
+    // Reset all key sequences
+    function resetAllKeySequences() {
+      Object.keys(keySequences).forEach((key) => resetKeySequence(key));
+    }
 
     // Keyboard event handler
     function handleKeyDown(event: KeyboardEvent) {
@@ -229,113 +278,52 @@ export default {
       switch (event.key) {
         case 'j': // Move focus to next result
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           focusResult(currentFocusIndex + 1);
           break;
 
         case 'k': // Move focus to previous result
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           focusResult(currentFocusIndex - 1);
           break;
 
         case 'g': // First part of 'gg' or second 'g' for top
           event.preventDefault();
-          resetBracketState(); // Reset bracket states
-
-          if (gKeyPressed) {
-            // Second 'g' - go to first result
-            focusResult(0);
-            gKeyPressed = false;
-            if (gKeyTimer) {
-              clearTimeout(gKeyTimer);
-              gKeyTimer = null;
-            }
-          } else {
-            // First 'g' - wait for second 'g' or timeout
-            gKeyPressed = true;
-            if (gKeyTimer) {
-              clearTimeout(gKeyTimer);
-            }
-            gKeyTimer = window.setTimeout(() => {
-              gKeyPressed = false;
-              gKeyTimer = null;
-            }, 500) as unknown as number; // Reset after 500ms
+          if (handleKeySequence('g', () => focusResult(0))) {
+            // Second 'g' - already processed
           }
           break;
 
         case 'G': // Go to last result
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           focusResult(searchResults.length - 1);
           break;
 
         case '[': // First part of '[[' for previous page
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          rightBracketPressed = false; // Reset right bracket state
-
-          if (leftBracketPressed) {
-            // Second '[' - go to previous page
-            navigateToPreviousPage();
-            leftBracketPressed = false;
-            if (leftBracketTimer) {
-              clearTimeout(leftBracketTimer);
-              leftBracketTimer = null;
-            }
-          } else {
-            // First '[' - wait for second '[' or timeout
-            leftBracketPressed = true;
-            if (leftBracketTimer) {
-              clearTimeout(leftBracketTimer);
-            }
-            leftBracketTimer = window.setTimeout(() => {
-              leftBracketPressed = false;
-              leftBracketTimer = null;
-            }, 500) as unknown as number; // Reset after 500ms
+          if (handleKeySequence('[', navigateToPreviousPage)) {
+            // Second '[' - already processed
           }
           break;
 
         case ']': // First part of ']]' for next page
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          leftBracketPressed = false; // Reset left bracket state
-
-          if (rightBracketPressed) {
-            // Second ']' - go to next page
-            navigateToNextPage();
-            rightBracketPressed = false;
-            if (rightBracketTimer) {
-              clearTimeout(rightBracketTimer);
-              rightBracketTimer = null;
-            }
-          } else {
-            // First ']' - wait for second ']' or timeout
-            rightBracketPressed = true;
-            if (rightBracketTimer) {
-              clearTimeout(rightBracketTimer);
-            }
-            rightBracketTimer = window.setTimeout(() => {
-              rightBracketPressed = false;
-              rightBracketTimer = null;
-            }, 500) as unknown as number; // Reset after 500ms
+          if (handleKeySequence(']', navigateToNextPage)) {
+            // Second ']' - already processed
           }
           break;
 
         case ' ': // Space to toggle mark on current result
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           toggleCurrentMark();
           break;
 
         case 'v': // Visual mode
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           if (visualModeActive) {
             exitVisualMode();
           } else {
@@ -345,36 +333,31 @@ export default {
 
         case 'Escape': // Exit visual mode
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           exitVisualMode();
           break;
 
         case 'A': // Mark all results
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           markAll();
           break;
 
         case 'D': // Clear all marks
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           clearAllMarks();
           break;
 
         case 'o': // Open all marked results in tabs
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
           openMarkedInTabs();
           break;
 
         case 'Enter': // Click on the current result
           event.preventDefault();
-          gKeyPressed = false; // Reset g key state
-          resetBracketState(); // Reset bracket states
+          resetAllKeySequences();
 
           if (currentFocusIndex >= 0 && searchResults[currentFocusIndex]) {
             const currentElement = searchResults[currentFocusIndex];
@@ -393,12 +376,7 @@ export default {
 
         default:
           // Reset all states for any other key
-          gKeyPressed = false;
-          if (gKeyTimer) {
-            clearTimeout(gKeyTimer);
-            gKeyTimer = null;
-          }
-          resetBracketState();
+          resetAllKeySequences();
           break;
       }
     }
@@ -429,24 +407,11 @@ export default {
       }
     }
 
-    // Function to reset bracket navigation state
-    function resetBracketState() {
-      leftBracketPressed = false;
-      if (leftBracketTimer) {
-        clearTimeout(leftBracketTimer);
-        leftBracketTimer = null;
-      }
-      rightBracketPressed = false;
-      if (rightBracketTimer) {
-        clearTimeout(rightBracketTimer);
-        rightBracketTimer = null;
-      }
-    }
-
     // Add stylesheet to the page
     function addStyles() {
       const styleEl = document.createElement('style');
       styleEl.textContent = `
+        /* Style for focused search result */
         .${FOCUS_STYLE} {
           background-color: rgba(66, 133, 244, 0.1);
           border-left: 3px solid #4285f4;
@@ -471,11 +436,11 @@ export default {
       document.head.appendChild(styleEl);
     }
 
-    // Initialization function
+    // Initialize the extension functionality
     function init() {
       log('Initializing Google Search Navigator');
 
-      // Add styles
+      // Add custom styles
       addStyles();
 
       // Set up event listeners
