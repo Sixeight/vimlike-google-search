@@ -442,6 +442,36 @@ export default {
       // Update search results list
       searchResults = getSearchResults();
 
+      // 拡張機能で処理する特定のキーリスト
+      const navigationKeys = [
+        'j',
+        'k',
+        'g',
+        'G',
+        '[',
+        ']',
+        ' ',
+        'v',
+        'c',
+        'C',
+        'A',
+        'D',
+        'o',
+        'Enter',
+        'Escape',
+      ];
+
+      // 修飾キーと組み合わせた場合は、拡張の処理を行わない（ブラウザのデフォルト処理を優先）
+      if ((event.ctrlKey || event.metaKey) && event.key !== 'Enter') {
+        return;
+      }
+
+      // 拡張機能のキーでない場合はブラウザのデフォルト処理に任せる
+      if (!navigationKeys.includes(event.key)) {
+        resetAllKeySequences();
+        return;
+      }
+
       switch (event.key) {
         case 'j': // Move focus to next result
           event.preventDefault();
