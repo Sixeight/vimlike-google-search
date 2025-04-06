@@ -349,8 +349,8 @@ export default {
               bubbles: true,
               cancelable: true,
               view: window,
-              ctrlKey: navigator.platform.indexOf('Mac') === -1,
-              metaKey: navigator.platform.indexOf('Mac') !== -1,
+              ctrlKey: !isMacOS(),
+              metaKey: isMacOS(),
             });
             link.dispatchEvent(newTabEvent);
           }
@@ -366,6 +366,11 @@ export default {
       active: boolean;
       timer: number | null;
     };
+
+    // Helper function to check if running on macOS
+    function isMacOS(): boolean {
+      return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
+    }
 
     // Store key sequence states
     const keySequences: Record<string, SequenceState> = {
@@ -544,8 +549,8 @@ export default {
                   bubbles: true,
                   cancelable: true,
                   view: window,
-                  ctrlKey: navigator.platform.indexOf('Mac') === -1,
-                  metaKey: navigator.platform.indexOf('Mac') !== -1,
+                  ctrlKey: !isMacOS(),
+                  metaKey: isMacOS(),
                 });
                 link.dispatchEvent(newTabEvent);
               } else {
