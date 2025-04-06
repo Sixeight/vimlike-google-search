@@ -411,7 +411,6 @@ export default {
     function addStyles() {
       const styleEl = document.createElement('style');
       styleEl.textContent = `
-        /* Style for focused search result */
         .${FOCUS_STYLE} {
           background-color: rgba(66, 133, 244, 0.1);
           border-left: 3px solid #4285f4;
