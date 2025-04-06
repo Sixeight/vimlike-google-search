@@ -56,4 +56,8 @@ npm run build
 
 ```bash
 npm run dev:firefox
-``` 
+```
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 

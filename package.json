@@ -2,8 +2,10 @@
   "name": "vimlike-google-search-navigator",
   "description": "Navigate Google search results efficiently with Vim-like keyboard shortcuts",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Tomohiro Nishimura",
   "scripts": {
     "dev": "wxt",
     "dev:firefox": "wxt -b firefox",
