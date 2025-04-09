@@ -7,7 +7,7 @@ export default defineConfig({
     description:
       'Navigate Google search results efficiently with Vim-like keyboard shortcuts',
     version: '1.0.0',
-    permissions: ['activeTab'],
+    permissions: [],
     icons: {
       16: 'icon/16.png',
       48: 'icon/48.png',
