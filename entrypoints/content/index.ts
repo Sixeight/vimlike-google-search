@@ -3,7 +3,7 @@ export default {
   matches: ['*://www.google.com/search?*'],
   main() {
     // Index of the currently focused search result
-    let currentFocusIndex = -1;
+    let currentFocusIndex = 0;
     // List of search result elements
     let searchResults: HTMLElement[] = [];
     // Style class for focused elements
@@ -53,11 +53,17 @@ export default {
     const SEARCH_RESULTS_SELECTOR =
       '#rso > div:has(> *) [data-hveid][data-ved] > [data-snc], #rso > :nth-child(1):has(> :nth-child(2)) [data-hveid][data-ved] > div:not([data-snc])';
 
+    // Query candidates selector
+    const QUERY_CANDIDATES_SELECTOR =
+      '#fprs > .Pqkn2e, #oFNiHe > :not(:has(#fprs)) > p';
+
     // Function to get search result elements
     function getSearchResults(): HTMLElement[] {
       // Get search results from Google's main container
       const results = Array.from(
-        document.querySelectorAll(SEARCH_RESULTS_SELECTOR)
+        document.querySelectorAll(
+          `${SEARCH_RESULTS_SELECTOR}, ${QUERY_CANDIDATES_SELECTOR}`
+        )
       ).filter((el) => {
         // Only include elements that contain links
         const hasLink = el.querySelector('a');
@@ -692,7 +698,7 @@ export default {
 
       // Focus on first result when page loads
       if (searchResults.length > 0) {
-        focusResult(0);
+        focusResult(1);
       }
     }
 
