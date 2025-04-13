@@ -36,6 +36,8 @@ export default {
       CLEAR_MARKS: 'D',
       OPEN_TABS: 'o',
       ENTER: 'Enter',
+      HISTORY_BACK: 'o', // Ctrl+o to go back in history
+      HISTORY_FORWARD: 'i', // Ctrl+i to go forward in history
     } as const;
 
     // Create keybinding to function mapping
@@ -516,6 +518,18 @@ export default {
       }
     }
 
+    // Function to navigate back in browser history
+    function navigateHistoryBack() {
+      log('Navigating back in history');
+      window.history.back();
+    }
+
+    // Function to navigate forward in browser history
+    function navigateHistoryForward() {
+      log('Navigating forward in history');
+      window.history.forward();
+    }
+
     // Keyboard event handler with improved event handling
     function handleKeyDown(event: KeyboardEvent) {
       // Do nothing if focus is on an input field or a form control
@@ -534,6 +548,19 @@ export default {
 
       // Update search results list
       searchResults = getSearchResults();
+
+      // Handle Ctrl+o (history back) and Ctrl+i (history forward)
+      if (event.ctrlKey) {
+        if (event.key === KEYS.HISTORY_BACK) {
+          event.preventDefault();
+          navigateHistoryBack();
+          return;
+        } else if (event.key === KEYS.HISTORY_FORWARD) {
+          event.preventDefault();
+          navigateHistoryForward();
+          return;
+        }
+      }
 
       // Skip extension handling when modifier keys are pressed (prioritize browser default behavior)
       // Exception: Ctrl/Cmd+Enter is handled by the extension
