@@ -59,20 +59,20 @@ export default {
     const QUERY_CANDIDATES_SELECTOR =
       '#fprs > .Pqkn2e, #oFNiHe > :not(:has(#fprs)) > p';
 
+    const ALL_SEARCH_RESULTS_SELECTOR = `${SEARCH_RESULTS_SELECTOR}, ${QUERY_CANDIDATES_SELECTOR}`;
+
     // Function to get search result elements
-    function getSearchResults(): HTMLElement[] {
+    function getSearchResults(query: string): HTMLElement[] {
       // Get search results from Google's main container
-      const results = Array.from(
-        document.querySelectorAll(
-          `${SEARCH_RESULTS_SELECTOR}, ${QUERY_CANDIDATES_SELECTOR}`
-        )
-      ).filter((el) => {
-        // Only include elements that contain links
-        const hasLink = el.querySelector('a');
-        // Only include visible elements
-        const isVisible = el.getBoundingClientRect().height > 0;
-        return hasLink && isVisible;
-      }) as HTMLElement[];
+      const results = Array.from(document.querySelectorAll(query)).filter(
+        (el) => {
+          // Only include elements that contain links
+          const hasLink = el.querySelector('a');
+          // Only include visible elements
+          const isVisible = el.getBoundingClientRect().height > 0;
+          return hasLink && isVisible;
+        }
+      ) as HTMLElement[];
 
       log('Found', results.length, 'search results');
       return results;
@@ -547,7 +547,7 @@ export default {
       }
 
       // Update search results list
-      searchResults = getSearchResults();
+      searchResults = getSearchResults(ALL_SEARCH_RESULTS_SELECTOR);
 
       // Handle Ctrl+o (history back) and Ctrl+i (history forward)
       if (event.ctrlKey) {
@@ -706,7 +706,7 @@ export default {
       // Since Google search results might load dynamically,
       // observe DOM changes to update the search results list
       const observer = new MutationObserver(() => {
-        searchResults = getSearchResults();
+        searchResults = getSearchResults(ALL_SEARCH_RESULTS_SELECTOR);
 
         // Fix focus index if it became invalid
         if (currentFocusIndex >= searchResults.length) {
@@ -720,12 +720,19 @@ export default {
       });
 
       // Get initial search results
-      searchResults = getSearchResults();
+      searchResults = getSearchResults(ALL_SEARCH_RESULTS_SELECTOR);
       log('Initial search results count:', searchResults.length);
+
+      const candidateResults = getSearchResults(QUERY_CANDIDATES_SELECTOR);
+      log('Candidate results count:', candidateResults.length);
 
       // Focus on first result when page loads
       if (searchResults.length > 0) {
-        focusResult(1);
+        if (candidateResults.length > 0) {
+          focusResult(1);
+        } else {
+          focusResult(0);
+        }
       }
     }
 
