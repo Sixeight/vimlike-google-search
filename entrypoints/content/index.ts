@@ -53,7 +53,7 @@ export default {
 
     // Modern Google search results selector
     const SEARCH_RESULTS_SELECTOR =
-      '#rso > div:has(> *) [data-hveid][data-ved] > [data-snc], #rso > :nth-child(1):has(> :nth-child(2)) [data-hveid][data-ved] > div:not([data-snc])';
+      '#rso > div:has(> *) [data-hveid][data-ved] > [data-snc], #rso > :nth-child(1):has(> :nth-child(2)) [data-hveid][data-ved] > div:not([data-snc]), #rso > div:nth-child(2) [data-hveid][data-ved] > div:not([data-snc])';
 
     // Query candidates selector
     const QUERY_CANDIDATES_SELECTOR =
