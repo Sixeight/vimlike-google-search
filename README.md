@@ -18,12 +18,11 @@ A browser extension that provides Vim-like keyboard shortcuts for Google search 
 - `k`: Move focus to the previous search result
 - `gg`: Jump to the first search result
 - `G`: Jump to the last search result
-- `[[`: Navigate to the previous page (deprecated)
 - `H`: Navigate to the previous page
-- `]]`: Navigate to the next page (deprecated)
 - `L`: Navigate to the next page
 - `Ctrl+o`: Navigate back in browser history
 - `Ctrl+i`: Navigate forward in browser history
+- `?`: Open help overlay
 
 ### Selection
 - `Space`: Toggle mark on the currently focused result

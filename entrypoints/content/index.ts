@@ -42,6 +42,35 @@ export default {
       ENTER: 'Enter',
       HISTORY_BACK: 'o', // Ctrl+o to go back in history
       HISTORY_FORWARD: 'i', // Ctrl+i to go forward in history
+      HELP: '?',
+    } as const;
+
+    // Helps
+    const HELPS = {
+      navigation: {
+        j: `Move focus to the next search result`,
+        k: `Move focus to the previous search result`,
+        gg: `Jump to the first search result`,
+        G: `Jump to the last search result`,
+        H: `Navigate to the previous page`,
+        L: `Navigate to the next page`,
+        'Ctrl+o': `Navigate back in browser history`,
+        'Ctrl+i': `Navigate forward in browser history`,
+        '?': `Show help`,
+        Escape: `Close help/exit visual mode`,
+      },
+      selection: {
+        Space: `Toggle mark on the currently focused result`,
+        v: `Enter visual mode`,
+        A: `Mark all results`,
+        D: `Clear marks`,
+      },
+      actions: {
+        Enter: `Open focused result (Cmd|Ctrl+Enter for new tab)`,
+        o: `Open in new tabs`,
+        c: `Copy URLs`,
+        C: `Copy Markdown`,
+      },
     } as const;
 
     // Create keybinding to function mapping
@@ -360,6 +389,15 @@ export default {
       }, 2000);
     }
 
+    // Handle escape key
+    function handleEsc() {
+      if (visualModeActive) {
+        exitVisualMode();
+      } else {
+        hideHelp();
+      }
+    }
+
     // Helper function to check if running on macOS
     function isMacOS(): boolean {
       return /Mac|iPhone|iPad|iPod/.test(navigator.userAgent);
@@ -499,12 +537,13 @@ export default {
       });
       keyActionMap.set(KEYS.COPY_URL, copyUrlsToClipboard);
       keyActionMap.set(KEYS.COPY_MARKDOWN, copyUrlsAsMarkdown);
-      keyActionMap.set(KEYS.ESCAPE, exitVisualMode);
+      keyActionMap.set(KEYS.ESCAPE, handleEsc);
       keyActionMap.set(KEYS.MARK_ALL, markAll);
       keyActionMap.set(KEYS.CLEAR_MARKS, clearAllMarks);
       keyActionMap.set(KEYS.OPEN_TABS, openMarkedInTabs);
       keyActionMap.set(KEYS.PREV_PAGE, navigateToPreviousPage);
       keyActionMap.set(KEYS.NEXT_PAGE, navigateToNextPage);
+      keyActionMap.set(KEYS.HELP, toggleHelp);
     }
 
     // Handle Enter key specially since it needs the event object
@@ -692,8 +731,103 @@ export default {
           transform: translateX(-50%) translateY(0);
           opacity: 1;
         }
+        /* Help overlay styles */
+        #gsc-help-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.8);
+          z-index: 10001;
+          display: none;
+        }
+        #gsc-help-overlay .gsc-help-content {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          background: #272822;
+          color: #f8f8f2;
+          padding: 20px;
+          border-radius: 8px;
+          max-width: 80%;
+          max-height: 80%;
+          overflow: auto;
+          font-family: monospace;
+          font-size: 14px;
+        }
+        #gsc-help-overlay .gsc-help-content h2 {
+          margin-top: 0;
+          color: #66d9ef;
+        }
+        #gsc-help-overlay .gsc-help-content dl {
+          display: grid;
+          grid-template-columns: max-content 1fr;
+          gap: 8px;
+          align-items: start;
+        }
+        #gsc-help-overlay .gsc-help-content dt {
+          justify-self: end;
+        }
+        #gsc-help-overlay .gsc-help-content dd {
+          justify-self: start;
+        }
+        #gsc-help-overlay kbd {
+          display: inline-block;
+          padding: 2px 6px;
+          background:rgba(39, 40, 34, 0.8);
+          border: 1px solid #ccc;
+          border-radius: 4px;
+          font-family: monospace;
+          vertical-align: middle;
+        }
       `;
       document.head.appendChild(styleEl);
+    }
+
+    // Help overlay functions
+    function createHelpOverlay() {
+      if (document.getElementById('gsc-help-overlay')) return;
+      const overlay = document.createElement('div');
+      overlay.id = 'gsc-help-overlay';
+
+      // Build help content dynamically from HELPS
+      let content = '<div class="gsc-help-content"><h2>Help</h2>';
+      for (const section of Object.keys(HELPS) as Array<keyof typeof HELPS>) {
+        const title = section.charAt(0).toUpperCase() + section.slice(1);
+        content += `<h3># ${title}</h3><dl>`;
+        for (const [key, desc] of Object.entries(HELPS[section])) {
+          content += `<dt><kbd>${key}</kbd></dt><dd>${desc}</dd>`;
+        }
+        content += '</dl>';
+      }
+      content += '</div>';
+      overlay.innerHTML = content;
+
+      document.body.appendChild(overlay);
+    }
+
+    function showHelp() {
+      createHelpOverlay();
+      const overlay = document.getElementById(
+        'gsc-help-overlay'
+      ) as HTMLDivElement;
+      overlay.style.display = 'block';
+    }
+
+    function hideHelp() {
+      const overlay = document.getElementById('gsc-help-overlay');
+      if (overlay) overlay.style.display = 'none';
+    }
+
+    function toggleHelp() {
+      const overlay = document.getElementById('gsc-help-overlay');
+      if (overlay && overlay.style.display === 'block') {
+        hideHelp();
+      } else {
+        showHelp();
+      }
     }
 
     // Initialize the extension functionality
