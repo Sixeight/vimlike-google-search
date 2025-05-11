@@ -2,7 +2,7 @@
   "name": "vimlike-google-search-navigator",
   "description": "Navigate Google search results efficiently with Vim-like keyboard shortcuts",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.1.0",
   "type": "module",
   "license": "MIT",
   "author": "Tomohiro Nishimura",

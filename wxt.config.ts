@@ -6,7 +6,7 @@ export default defineConfig({
     name: 'Vim-like Google Search Navigator',
     description:
       'Navigate Google search results efficiently with Vim-like keyboard shortcuts',
-    version: '1.0.0',
+    version: '1.1.0',
     permissions: [],
     icons: {
       16: 'icon/16.png',
