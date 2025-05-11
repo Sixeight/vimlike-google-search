@@ -25,8 +25,12 @@ export default {
       MOVE_UP: 'k',
       GO_TOP_PART: 'g',
       GO_BOTTOM: 'G',
+      // DEPRECATED: use H
       PREV_PAGE_PART: '[',
+      // DEPRECATED: use L
       NEXT_PAGE_PART: ']',
+      PREV_PAGE: 'H',
+      NEXT_PAGE: 'L',
       TOGGLE_MARK: ' ',
       VISUAL_MODE: 'v',
       COPY_URL: 'c',
@@ -499,6 +503,8 @@ export default {
       keyActionMap.set(KEYS.MARK_ALL, markAll);
       keyActionMap.set(KEYS.CLEAR_MARKS, clearAllMarks);
       keyActionMap.set(KEYS.OPEN_TABS, openMarkedInTabs);
+      keyActionMap.set(KEYS.PREV_PAGE, navigateToPreviousPage);
+      keyActionMap.set(KEYS.NEXT_PAGE, navigateToNextPage);
     }
 
     // Handle Enter key specially since it needs the event object
